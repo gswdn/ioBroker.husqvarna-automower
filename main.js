@@ -1051,6 +1051,18 @@ class HusqvarnaAutomower extends utils.Adapter {
 						},
 						native: {},
 					});
+					await this.setObjectNotExistsAsync(`${mowerData.data[i].id}.ACTIONS.REFRESHSTATISTICS`, {
+						type: 'state',
+						common: {
+							name: 'Refreshes statistic values outside the regular configured schedule',
+							type: 'boolean',
+							def: false,
+							role: 'button',
+							read: true,
+							write: true,
+						},
+						native: {},
+					});					
 
 					// create channel "ACTIONS.start"
 					await this.setObjectNotExistsAsync(`${mowerData.data[i].id}.ACTIONS.start`, {
@@ -1323,6 +1335,7 @@ class HusqvarnaAutomower extends utils.Adapter {
 					this.subscribeStates(`${mowerData.data[i].id}.ACTIONS.PARKUNTILFURTHERNOTICE`);
 					this.subscribeStates(`${mowerData.data[i].id}.ACTIONS.park.PARK`);
 					this.subscribeStates(`${mowerData.data[i].id}.ACTIONS.RESUMESCHEDULE`);
+					this.subscribeStates(`${mowerData.data[i].id}.ACTIONS.REFRESHSTATISTICS`);
 					this.subscribeStates(`${mowerData.data[i].id}.ACTIONS.start.START`);
 					if (mowerData.data[i].attributes.capabilities.workAreas) {
 						this.subscribeStates(`${mowerData.data[i].id}.ACTIONS.startInWorkArea.STARTINWORKAREA`);
@@ -1956,7 +1969,16 @@ class HusqvarnaAutomower extends utils.Adapter {
 				const data_tasks = [];
 				let url = '';
 
-				if (command === 'PAUSE') {
+				if (command === "REFRESHSTATISTICS") {
+					try {
+						await this.getMowerData();
+						await this.fillObjects(this.mowerData);
+					} catch (error) {
+						this.log.debug(`${error} (ERR_#015)`);
+					}
+	
+					return;
+				} else if (command === 'PAUSE') {
 					// Pause mower
 					data_command.data.type = 'Pause';
 					url = 'actions';
